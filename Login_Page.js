@@ -805,10 +805,10 @@ class AuthSystem {
     const agreeToTerms = document.getElementById("mobileTerms").checked;
 
     // Validation
-    if (!name) {
-      this.showToast("Please enter your full name", "error");
-      return;
-    }
+    // if (!name) {
+    //   this.showToast("Please enter your full name", "error");
+    //   return;
+    // }
 
     if (!this.validateEmail(email, "mobileSignupEmailError")) {
       this.showToast("Invalid UM email address", "error");
