@@ -17,8 +17,18 @@ if(!$email || !$password){
 }
 
 // Check user
+// $stmt = $conn->prepare("SELECT * FROM users WHERE email=? LIMIT 1");
+// $stmt->bind_param(types: "s", var: $email);
+// $stmt->execute();
+// $result = $stmt->get_result();
+
+// if($result->num_rows === 0){
+//     echo json_encode(['status' => 'error', 'message' => 'Invalid credentials']);
+//     exit;
+// }
+
 $stmt = $conn->prepare("SELECT * FROM users WHERE email=? LIMIT 1");
-$stmt->bind_param(types: "s", var: $email);
+$stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
 
