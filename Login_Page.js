@@ -628,7 +628,7 @@ class AuthSystem {
       courseSelect.disabled = false;
       courseSelect.innerHTML = '<option value="">Select course</option>';
 
-      courses.Ddata.forEach((course) => {
+      courses.data.forEach((course) => {
         const option = document.createElement("option");
         option.value = course.id;
         option.textContent = course.name;
