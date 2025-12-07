@@ -1,3 +1,15 @@
+<?php
+session_start(); // Start session
+
+include 'config.php';
+
+// Auth Guard: redirect if already logged in
+if (isset($_SESSION['user'])) {
+    header("Location: login.php"); 
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -12,13 +12,15 @@ class AuthSystem {
     const firstname = document.getElementById("firstname")?.value || "";
     const lastname = document.getElementById("lastname")?.value || "";
     const email = document.getElementById("email")?.value || "";
-    const userType = document.getElementById("user_type")?.value || "";
-    const fullStudentId = document.getElementById("student_id")?.value || "";
+    const userType = document.getElementById("usertype")?.value || "";
+    const fullStudentId = document.getElementById("studentId")?.value || ""; //NAAY Gi-change studentid to studentId
     const department = document.getElementById("department")?.value || "";
     const course = document.getElementById("course")?.value || "";
     const yearLevel = document.getElementById("year_level")?.value || "";
     const graduationYear =
       document.getElementById("graduation_year")?.value || "";
+
+      
 
     // Construct user data object
     const userData = {
@@ -56,7 +58,114 @@ class AuthSystem {
       console.error("Error:", error);
       this.showToast("Failed to save data. Please try again.", "error");
     }
-  }
+    
+  }async handleMobileSignup(e) {
+    e.preventDefault();
+    console.log("SENT TO PHP:", userData); //BALIKAN KO NI
+
+
+    const firstname = document.getElementById("mobileFirstName").value.trim();
+    const lastname = document.getElementById("mobileLastName").value.trim();
+    const email = document.getElementById("mobileSignupEmail").value.trim();
+    const password = document.getElementById("mobileSignupPassword").value;
+    const confirmPass = document.getElementById("mobileConfirmPassword").value;
+    const userType = document.getElementById("mobileUserType").value;
+    const studentId = document.getElementById("mobileStudentId").value.trim();
+    const department = document.getElementById("mobileDepartment").value;
+    const course = document.getElementById("mobileCourse").value;
+    const yearLevel = document.getElementById("mobileYearLevel").value;
+    const graduationYear = document.getElementById("mobileGraduationYear").value;
+
+    if (!document.getElementById("mobileTerms").checked) {
+        this.showToast("You must agree to the terms.", "error");
+        return;
+    }
+
+    if (!studentId && userType !== 'alumni') {
+        this.showToast("Student ID is required", "error");
+        return;
+    }
+
+    //balikan ko ni
+  //  const rawId = studentId;
+  //  const fullStudentId = (userType === "faculty" ? "F" : "S") + rawId;
+
+
+  //   // Validate full ID
+  //   if (!this.validateStudentId(fullStudentId, userType)) {
+  //       this.showToast("Invalid ID format.", "error");
+  //       return;
+  //   }
+
+  // VALIDATION PER USER TYPE
+let fullStudentId = "";
+
+if (userType === "student") {
+    if (!studentId) {
+        this.showToast("Student ID is required", "error");
+        return;
+    }
+    fullStudentId = "S" + studentId;
+}
+
+else if (userType === "faculty") {
+    if (!studentId) {
+        this.showToast("Faculty ID is required", "error");
+        return;
+    }
+    fullStudentId = "F" + studentId;
+}
+
+else if (userType === "alumni") {
+    // ALUMNI DOES NOT NEED ID
+    fullStudentId = "";
+}
+
+
+    // if (password !== confirmPass) {
+    //     this.showToast("Passwords do not match.", "error");
+    //     return;
+    // }
+
+    // const fullStudentId = (userType === "faculty" ? "F" : "S") + studentId;
+
+    const userData = {
+        firstname,
+        lastname,
+        email,
+        password,
+        userType,
+        studentId: fullStudentId,
+        department,
+        course,
+        yearLevel: userType === "student" ? parseInt(yearLevel) : 0,
+        graduationYear: userType === "alumni" ? parseInt(graduationYear) : 0
+    };
+
+    try {
+        const response = await fetch("api/service/signup.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            this.showToast(result.message, "success");
+
+            document.getElementById("mobileSignupForm").reset();
+            document.getElementById("mobileAuthDialog").classList.remove("active");
+            document.body.style.overflow = "";
+        } else {
+            this.showToast(result.message, "error");
+        }
+    } catch (error) {
+        console.error("Mobile signup error:", error);
+        this.showToast("Signup failed. Please try again.", "error");
+    }
+}
+
 
   async fetchStudents(){
     let userData = {
@@ -148,6 +257,19 @@ class AuthSystem {
         option.value = dept.id; // Use department code
         option.textContent = dept.name;
         mobileDeptSelect.appendChild(option);
+
+        document.getElementById("mobileSignupForm").addEventListener("submit", function (e) {
+    const terms = document.getElementById("mobileTerms");
+
+    if (!terms.checked) {
+        e.preventDefault();
+        alert("Please agree to the Terms of Service and Privacy Policy to continue.");
+        return false;
+    }
+});
+
+
+
       });
     }
   }
@@ -735,7 +857,7 @@ class AuthSystem {
 
     // Get input values
     const firstname = document.getElementById("signupFirstName").value.trim();
-    const lastname = document.getElementById("signupFirstName").value.trim();
+    const lastname = document.getElementById("signupLastName").value.trim();
     const email = document.getElementById("signupEmail").value.trim();
     const password = document.getElementById("signupPassword").value;
     const confirmPass = document.getElementById("confirmPassword").value;
@@ -746,6 +868,8 @@ class AuthSystem {
     const yearLevel = document.getElementById("yearLevel").value;
     const graduationYear = document.getElementById("graduationYear").value;
     const agreeToTerms = document.getElementById("termsDesktop").checked;
+    // Handle mobile/desktop fields
+
 
     // Validation...
     // (keep all your current validation here)
@@ -865,8 +989,8 @@ class AuthSystem {
         lastname: lastname,
         email: email,
         password: password,
-        user_type: userType,
-        student_id: fullStudentId,
+        usertype: userType,
+        studentId: fullStudentId, //studentid to studentI
         department: department,
         course: course,
         year_level: userType === "student" ? yearLevel : null,
@@ -1085,4 +1209,20 @@ window.onLogin = function (userData) {
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function () {
   window.authSystem = new AuthSystem();
+
+  document.getElementById("signupForm").addEventListener("submit", function (e) {
+    const terms = document.getElementById("termsDesktop");
+
+
+
+    if (!terms.checked) {
+        e.preventDefault(); // stop form submission
+        alert("You must agree to the Terms of Service and Privacy Policy before creating an account.");
+        return false;
+    }
 });
+
+ }
+
+
+);

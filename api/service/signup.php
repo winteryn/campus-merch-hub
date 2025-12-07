@@ -1,44 +1,81 @@
 <?php
-include '../../config.php';
+require '../../config.php';
 
-// Get JSON input
-$data = json_decode(file_get_contents('php://input'), true);
+// Read JSON
+$raw = file_get_contents("php://input"); // ictrl z 
+$data = json_decode($raw, true);
 
-$firstname   = $data['firstname'] ?? '';
-$lastname    = $data['lastname'] ?? '';
-$email       = $data['email'] ?? '';
-$password    = $data['password'] ?? '';
-$userType    = $data['userType'] ?? '';
-$studentId   = $data['studentId'] ?? '';
-$department  = $data['department'] ?? '';
-$course      = $data['course'] ?? '';
-$yearLevel   = $data['yearLevel'] ?? '';
+// DEBUG: return raw JSON if empty or invalid
+if (!$data) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid JSON received',
+        'raw' => $raw
+    ]);
+    exit;
+}
 
-// Basic validation
+// Extract fields (correct keys)
+$firstname   = trim($data['firstname'] ?? '');
+$lastname    = trim($data['lastname'] ?? '');
+$email       = trim($data['email'] ?? '');
+$password    = trim($data['password'] ?? '');
+$userType    = trim($data['userType'] ?? '');
+$studentId   = trim($data['studentId'] ?? '');
+$department  = trim($data['department'] ?? '');
+$course      = trim($data['course'] ?? '');
+$yearLevel   = trim($data['yearLevel'] ?? '');
+$graduationYear = trim($data['graduationYear'] ?? '');
+
+// DEBUG return what the mobile sends
+if (true) {
+    file_put_contents("debug_signup_log.txt", print_r($data, true));
+}
+
+// Required fields
 if (!$firstname || !$lastname || !$email || !$password) {
     echo json_encode(['status' => 'error', 'message' => 'Required fields missing']);
     exit;
 }
 
-// Check if email exists
+// Validate student ID
+if ($userType !== 'alumni') {
+    if (empty($studentId)) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Student/Faculty ID is EMPTY — Mobile is not sending data.',
+            'received' => $data
+        ]);
+        exit;
+    }
+} else {
+    if (empty($studentId)) {
+        $studentId = 'A' . uniqid();
+    }
+}
+
+// Check email
 $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows > 0) {
     echo json_encode(['status' => 'error', 'message' => 'Email already registered']);
     exit;
 }
 
-// Hash password
 $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-// Insert user into correct columns
-$stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password_hash, role, student_id, department, course, year_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+// Insert
+$stmt = $conn->prepare("
+    INSERT INTO users 
+    (first_name, last_name, email, password_hash, role, student_id, department, course, year_level, graduation_year) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+");
 
-// Bind all params as strings
 $stmt->bind_param(
-    "sssssssss",
+    "ssssssssss",
     $firstname,
     $lastname,
     $email,
@@ -47,13 +84,21 @@ $stmt->bind_param(
     $studentId,
     $department,
     $course,
-    $yearLevel
+    $yearLevel,
+    $graduationYear
 );
 
-// Execute and return response
 if ($stmt->execute()) {
-    echo json_encode(['status' => 'success', 'message' => 'Account created successfully']);
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Account created successfully',
+        'received' => $data
+    ]);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to create account']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'SQL ERROR: ' . $stmt->error,
+        'received' => $data
+    ]);
 }
 ?>
