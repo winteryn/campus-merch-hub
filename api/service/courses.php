@@ -12,7 +12,7 @@ if (!$department_id) {
 $stmt = $conn->prepare("SELECT * FROM courses WHERE department_id = ?");
 
 // Bind the parameter as an integer ("i")
-$stmt->bind_param("i", $department_id);
+$stmt->bind_param("i", var: $department_id);
 
 $stmt->execute();
 $result = $stmt->get_result();

@@ -15,7 +15,7 @@ if($user['role'] === 'admin'){
     header("Location: admin/dashboard.php");
     exit;
 } elseif($user['role'] === 'student'){
-    header("Location: user/dashboard.php");
+    header("Location: dashboard.php");
     exit;
 } else {
     // Unknown role, log out for safety
